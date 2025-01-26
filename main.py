@@ -6,6 +6,8 @@
 
 # Scriere cod QR
 
+import reedsolo
+
 def scrierecodQR():
     print()
     secv = input("Sirul de caractere ce doresti a transforma in cod QR: ")
@@ -15,7 +17,7 @@ def scrierecodQR():
 
     #Ce versiune sa folosim? (Error correction high)
 
-    VE = [0,9,16,26,36,46,60,66,86,100,122] #Max V10
+    VE = [0,9,16,26,36,46,60] #Max V6
 
     #1. Create data segment
     secv = list(secv)
@@ -50,6 +52,7 @@ def scrierecodQR():
     bit_padding = ""
 
     nr_pana_acum = Segment_0_mode + segmlen + Segment_0_data + terminator
+
     aux = len(nr_pana_acum)
     while aux % 8 != 0:
         nr_pana_acum += "0"
@@ -60,7 +63,7 @@ def scrierecodQR():
 
     for i in range(len(VE)):
         if aux > VE[i]:
-            pass
+            vs = i
         else:
             vs = i
             break
@@ -93,11 +96,42 @@ def scrierecodQR():
     if aux == 0:
         nrLB = 4                #Nr Long Blocks
         nrSB = 0                #Nr Short Blocks
+        copnrLB = nrLB
+        copnrSB = nrSB
     else:
         nrLB = aux
+        copnrLB = nrLB
         nrSB = 4 - aux
+        copnrSB = nrSB
 
-    M = []
+    nr_pana_acum = list(nr_pana_acum)
+
+    for i in range(0,len(nr_pana_acum),8):
+        nr_pana_acum[i] = "".join(nr_pana_acum[i:i+8])
+
+    while "0" in nr_pana_acum:
+        nr_pana_acum.remove("0")
+    while "1" in nr_pana_acum:
+        nr_pana_acum.remove("1")
+
+    M = [] #matricea in care stocam datele
+
+    for i in range(len(nr_pana_acum)):
+        M.append(nr_pana_acum[i])
+
+    i = 0
+    while copnrSB != 0:
+        x = "".join(M[i:i+dataCdWdperSB])
+        M[i:i+dataCdWdperSB] = [x]
+        i += 1
+        copnrSB -= 1
+    while copnrLB != 0:
+        x = "".join(M[i:i+dataCdWdperLB])
+        M[i:i+dataCdWdperLB] = [x]
+        i += 1
+        copnrLB -= 1
+
+    print(M)
 
     return
 
