@@ -7,6 +7,70 @@
 # Scriere cod QR
 
 import reedsolo
+from PIL import Image
+import numpy as np
+
+def fill_qr_matrix_in_zigzag(QR, M3):
+    """
+    Introduce elementele din lista M3 într-o matrice QR conform unui model zigzag.
+    - QR: matricea QR (pătratică, dimensiune aux x aux)
+    - M3: lista de biți care trebuie introduși
+    """
+    aux = len(QR)  # Dimensiunea matricei QR
+    cnt = 0  # Contor pentru lista M3
+    direction = -1  # Direcția de parcurgere: -1 pentru sus, +1 pentru jos
+    j = aux - 1  # Începem din colțul din dreapta jos
+
+    while j > 0:  # Parcurgem coloanele de la dreapta la stânga
+        if j == 6:  # Sărim coloana de aliniere
+            j -= 1
+
+        # Parcurgem perechea de coloane
+        i = aux - 1 if direction == -1 else 0  # Pornim de jos sau de sus
+        while (i >= 0 and direction == -1) or (i < aux and direction == 1):
+            # Procesăm cele două coloane (j și j-1)
+            for col in [j, j - 1]:
+                if cnt == len(M3):  # Dacă am terminat lista M3, ieșim
+                    return QR
+
+                # Verificăm dacă suntem într-o zonă rezervată
+                if not (
+                    (i >= aux - 8 and col <= 8) or  # Finder pattern dreapta jos
+                    (i == 6 or col == 6) or  # Linie/coloană de aliniere
+                    (i <= 8 and col <= 8) or  # Finder pattern stânga sus
+                    (i <= 8 and col >= aux - 8) or  # Finder pattern dreapta sus
+                    (aux - 9 <= i <= aux - 5 and aux - 9 <= col <= aux - 5)  # Alignment pattern
+                ):
+                    QR[i][col] = M3[cnt]  # Introducem bitul curent
+                    cnt += 1
+
+            # Actualizăm poziția pe linie
+            i += direction
+
+        # Schimbăm direcția (în sus sau în jos)
+        direction *= -1
+        j -= 2  # Trecem la următoarea pereche de coloane
+
+    return QR
+
+def matrice_to_png(QR, fisier = "outputASC.png", scale=10):
+    # https://stackoverflow.com/questions/78913551/python-using-pillow-to-convert-any-format-to-png-any-way-to-speed-the-process
+    # https://www.geeksforgeeks.org/convert-a-numpy-array-to-an-image/
+
+    # Convertire QR -> NumPy
+    QR = np.array(QR, dtype=np.uint8)
+
+    # Marim QR (ca sa nu avem un numar = un pixel)
+    QR2 = np.kron(QR, np.ones((scale, scale), dtype=np.uint8))
+
+    # 1 = black, 0 = white
+    x = (1 - QR2) * 255
+
+    # crearea efectiva
+    Image.fromarray(x, mode="L").save(fisier)
+
+    print()
+    print(f"Imaginea a fost salvata ca '{fisier}'.")
 
 def generare_ecc(M, capacitate):
 
@@ -39,6 +103,7 @@ def scrierecodQR():
     VE = [0, 9, 16, 26, 36, 46, 60]         # Capacitatile in functie de versiune
     VECC = [0, 17, 28, 22, 16, 22, 28]      # ECC urile in functie de versiune
     VnrB = [0, 1, 1, 2, 4, 4, 4]            # Numarul de blocuri in functie de versiune
+    VQRSize = [0, 21, 25, 29, 33, 37, 41]   # Marimea matricei QR in functie de versiune
 
     # 1. Create data segment
     secv = list(secv)
@@ -189,8 +254,96 @@ def scrierecodQR():
             M2[i].remove(None)
 
     M3 = [elem for linie in M2 for elem in linie]       # Lista cu elemente
+    M3 = "".join(M3)
+    M3 = list(M3)
+    for i in range(len(M3)):
+        M3[i] = int(M3[i])
 
-    print(M3)
+    # 5. Draw fixed patterns
+
+    QR = [[0 for _ in range(VQRSize[vs])] for _ in range(VQRSize[vs])]
+
+    for i in range(VQRSize[vs]):
+        if i % 2 == 0:
+            QR[i][6] = 1
+            QR[6][i] = 1
+
+    # Coltul stanga sus
+
+    for i in range(8):
+        for j in range(8):
+            QR[i][j] = 0
+
+    for i in range(7):
+        for j in range(7):
+            QR[i][j] = 1
+
+    for i in range(1,6):
+        for j in range(1,6):
+            QR[i][j] = 0
+
+    for i in range(2,5):
+        for j in range(2,5):
+            QR[i][j] = 1
+
+    # Coltul dreapta sus
+
+    aux = len(QR)
+
+    for i in range(8):
+        for j in range(aux-8,aux):
+            QR[i][j] = 0
+
+    for i in range(7):
+        for j in range(aux-7,aux):
+            QR[i][j] = 1
+
+    for i in range(1, 6):
+        for j in range(aux-6, aux-1):
+            QR[i][j] = 0
+
+    for i in range(2, 5):
+        for j in range(aux-5, aux-2):
+            QR[i][j] = 1
+
+    # Coltul stanga jos
+
+    for i in range(aux-8,aux):
+        for j in range(8):
+            QR[i][j] = 0
+
+    for i in range(aux-7,aux):
+        for j in range(7):
+            QR[i][j] = 1
+
+    for i in range(aux-6, aux-1):
+        for j in range(1, 6):
+            QR[i][j] = 0
+
+    for i in range(aux-5, aux-2):
+        for j in range(2, 5):
+            QR[i][j] = 1
+
+    # patrat dreapta jos
+
+    if vs >= 2:
+        for i in range(aux - 9, aux - 4):
+            for j in range(aux - 9, aux - 4):
+                QR[i][j] = 1
+
+        for i in range(aux - 8, aux - 5):
+            for j in range(aux - 8, aux - 5):
+                QR[i][j] = 0
+
+        QR[aux-7][aux-7] = 1
+
+    QR[aux-8][8] = 1
+
+    # INTRODUCEM LISTA DE 0 SI 1 IN QR
+
+    QR = fill_qr_matrix_in_zigzag(QR,M3)
+
+    matrice_to_png(QR, "outputASC.png", 20)
 
     return
 
