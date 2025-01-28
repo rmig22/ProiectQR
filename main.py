@@ -10,15 +10,11 @@ import reedsolo
 from PIL import Image
 import numpy as np
 
-def fill_qr_matrix_in_zigzag(QR, M3):
-    """
-    Introduce elementele din lista M3 într-o matrice QR conform unui model zigzag.
-    - QR: matricea QR (pătratică, dimensiune aux x aux)
-    - M3: lista de biți care trebuie introduși
-    """
-    aux = len(QR)  # Dimensiunea matricei QR
-    cnt = 0  # Contor pentru lista M3
-    direction = -1  # Direcția de parcurgere: -1 pentru sus, +1 pentru jos
+def zigzag(QR, M3):
+
+    aux = len(QR)                       # Dim QR
+    cnt = 0
+    directie = -1                       # Direcția de parcurgere: -1 pentru sus, +1 pentru jos
     j = aux - 1  # Începem din colțul din dreapta jos
 
     while j > 0:  # Parcurgem coloanele de la dreapta la stânga
@@ -26,8 +22,8 @@ def fill_qr_matrix_in_zigzag(QR, M3):
             j -= 1
 
         # Parcurgem perechea de coloane
-        i = aux - 1 if direction == -1 else 0  # Pornim de jos sau de sus
-        while (i >= 0 and direction == -1) or (i < aux and direction == 1):
+        i = aux - 1 if directie == -1 else 0  # Pornim de jos sau de sus
+        while (i >= 0 and directie == -1) or (i < aux and directie == 1):
             # Procesăm cele două coloane (j și j-1)
             for col in [j, j - 1]:
                 if cnt == len(M3):  # Dacă am terminat lista M3, ieșim
@@ -45,11 +41,11 @@ def fill_qr_matrix_in_zigzag(QR, M3):
                     cnt += 1
 
             # Actualizăm poziția pe linie
-            i += direction
+            i += directie
 
         # Schimbăm direcția (în sus sau în jos)
-        direction *= -1
-        j -= 2  # Trecem la următoarea pereche de coloane
+        directie *= -1
+        j -= 2                      # mergem cate doua coloane
 
     return QR
 
@@ -341,7 +337,7 @@ def scrierecodQR():
 
     # INTRODUCEM LISTA DE 0 SI 1 IN QR
 
-    QR = fill_qr_matrix_in_zigzag(QR,M3)
+    QR = zigzag(QR,M3)
 
     matrice_to_png(QR, "outputASC.png", 20)
 
