@@ -26,3 +26,7 @@ https://www.geeksforgeeks.org/convert-a-numpy-array-to-an-image/
 Pentru a crea ECC:
 
 https://pypi.org/project/reedsolo/#basic-usage-with-high-level-rscodec-class
+
+Pentru format bits:
+
+https://www.thonky.com/qr-code-tutorial/format-version-information
