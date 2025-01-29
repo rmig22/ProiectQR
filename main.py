@@ -287,6 +287,55 @@ def generare_ecc(M, capacitate):
 
         linie[1] = ECCinbinar
 
+def creare_format(masca):
+
+    ecc = "10"
+
+    mascabit = f"{masca:03b}"
+
+    formatbit = ecc + mascabit
+
+    # Polinom generator pentru BCH (15, 5)
+    generator = 0b10100110111  # x^10 + x^8 + x^5 + x^4 + x^2 + x + 1
+
+    info = int(formatbit, 2) << 10  # spatiu pentru BCH
+
+    # BCH
+    for i in range(len(formatbit)):
+        if info & (1 << (14 - i)):
+            info ^= generator << (4 - i)
+
+    BCH = info & 0b1111111111
+
+    rez1 = formatbit + f"{BCH:010b}"
+
+    rez2 = int(rez1, 2) ^ 0b101010000010010
+
+    return f"{rez2:015b}"
+
+def format_in_qr(QR, biti):
+    aux = len(QR)
+
+    for i in range(6):
+        QR[8][i] = int(biti[i])
+    QR[8][7] = int(biti[6])
+
+    for i in range(8):
+        QR[8][aux - 8 + i] = int(biti[7 + i])
+
+    for i in range(6):
+        QR[aux - 1 - i][8] = int(biti[i])
+
+    QR[aux - 1 - 6][8] = 1
+
+    for i in range(2):
+        QR[8 - i][8] = int(biti[7+i])
+
+    for i in range(6):
+        QR[5 - i][8] = int(biti[9+i])
+
+    return QR
+
 def scrierecodQR():
     print()
     secv = input("Sirul de caractere ce doresti a transforma in cod QR: ")
@@ -684,6 +733,12 @@ def scrierecodQR():
     #     print()
 
     QR = aplica_masca(QR,Lista_masti[1])
+
+    masca = 1
+
+    biti = creare_format(masca)
+
+    QR = format_in_qr(QR, biti)
 
     matrice_to_png(QR, "outputASC.png", 20)
 
