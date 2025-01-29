@@ -10,6 +10,220 @@ import reedsolo
 from PIL import Image
 import numpy as np
 
+lungime_biti = [208, 352, 560, 800, 1072, 1376] #lista cu lungimile sirurilor de biti pt fiecare varianta
+lungime_matrice = [21, 25, 29, 33, 37, 41] #lista cu marimea matricei pt fiecare varianta
+
+def scale_down(img_path, scale_factor):
+    img = Image.open(img_path)
+    new_size = (img.width // scale_factor, img.height // scale_factor)
+    img_mica= img.resize(new_size, Image.NEAREST)
+    return img_mica
+
+def culoare_pixel(img, x, y):
+    #1 pentru pixel negru, 0 pentru pixel alb
+    pixel = img.getpixel((x, y))
+
+    if isinstance(pixel, int):  # Imagine alb-negru
+        return 1 if pixel == 0 else 0
+    # elif isinstance(pixel, tuple):  # Imagine RGB
+    #     return 1 if pixel == (0, 0, 0) else 0
+
+#verificam daca pixelul (x, y) este intr-unul din cele 3/4 patratele fixe, caz in care nu il bagam in string-ul final
+def este_zona_rezervata(x, y, dim, version):
+
+    if (x < 9 and y < 9) or (x < 9 and y >= dim - 8) or (x >= dim - 8 and y < 9):
+        return True
+
+
+    if (x == 6 and y >= 0 and y < dim) or (y == 6 and x >= 0 and x < dim):
+        return True
+
+
+    if (y == 8 and x < 9) or (x == 8 and y < 9) or (x == 8 and y >= dim - 8) or (y == 8 and x >= dim - 8):
+        return True
+
+    if version == 2:
+        coord = [(18, 18)]
+        for cx, cy in coord:
+            if cx - 2 <= x <= cx + 2 and cy - 2 <= y <= cy + 2:
+                return True
+        return False
+
+    elif version == 3:
+        if 22 <= x <= 26 and 22 <= y <= 26:
+            return True
+
+    elif version == 4:
+        if 24 <= x <= 28 and 24 <= y <= 28:
+            return True
+
+    elif version == 5:
+        if 28 <= x <= 32 and 28 <= y <= 32:
+            return True
+    elif version == 6:
+        coord = [(6, 30), (30, 6), (30, 30)]
+        for cx, cy in coord:
+            if cx - 2 <= x <= cx + 2 and cy - 2 <= y <= cy + 2:
+                return True
+        return False
+
+
+    return False
+
+ #extragem din PNG doar bitii de care avem nevoie
+def extrage_bits_qr(img, dim_qr, biti, version):
+    qr_bits = []
+    directie = -1  # -1 pentru sus, +1 pentru jos
+    j = dim_qr - 1
+
+    while j > 0:
+        if j == 6:  # 6 e coloana de aliniere
+            j -= 1
+
+        i = dim_qr - 1 if directie == -1 else 0
+        while 0 <= i < dim_qr:
+            for col in [j, j - 1]:
+                if len(qr_bits) == biti:  #am ajuns la lungimea string-ului final(cu tot cu ECC codes)
+                    return "".join(map(str, qr_bits))
+
+                if 0 <= col < dim_qr and not este_zona_rezervata(i, col, dim_qr, version):
+                    qr_bits.append(culoare_pixel(img, col, i))
+
+            i += directie
+
+        directie *= -1  #schimbam directia
+        j -= 2  #urmatoarea "pereche" de coloane
+
+    return "".join(map(str, qr_bits))  # string-ul final de biti
+
+#functie care verifica care e scale-ul, mai exact: numaram bitii de culoare neagra de la coltul stanga sus si mergem
+#pe diagonala spre coltul dreapta jos, pana dam de primul bit alb, iar acea lungimea e valoarea scale-ului
+def detecteaza_scale(img_path):
+    img = Image.open(img_path)
+    width, height = img.size
+    x, y = 0, 0
+    scale = 0
+
+    while x < width and y < height:
+        pixel = img.getpixel((x, y))
+        if isinstance(pixel, int):
+            if pixel == 255:
+                break
+            else:
+                scale += 1
+        # elif isinstance(pixel, tuple):  # Imagine RGB (convertim la B/W)
+        #     if pixel == (255, 255, 255):
+        #         break
+        #     else:
+        #         scale += 1
+
+        x += 1
+        y += 1
+
+    return scale
+
+def eliminare_ECC(cod):
+    #dictionarul cu datele pentru fiecare varianta, toate pe error-correction high
+    qr = {
+            1: {"marime_biti": 72, "total_bytes+ecc": 26},
+            2: {"marime_biti": 128, "total_bytes+ecc": 44},
+            3: {"marime_biti": 208, "total_bytes+ecc": 70},
+            4: {"marime_biti": 288, "total_bytes+ecc": 100},
+            5: {"marime_biti": 368, "total_bytes+ecc": 134},
+            6: {"marime_biti": 480, "total_bytes+ecc": 172},
+        }
+    for versiune in qr.keys():
+        if qr[versiune]["total_bytes+ecc"] == len(cod)/8:
+            return cod[:qr[versiune]["marime_biti"]], versiune
+    else:
+        print("Codul QR este de o varianta > 6")
+        return -1, -1
+
+def rearanjare_cod(string_cod, versiune):
+
+    #facem rearanjarea pentru fiecare tip de varianta
+    if versiune == 1 or versiune == 2:
+        return string_cod
+
+    elif versiune == 3:
+        cod = [string_cod[i:i+8] for i in range(0, len(string_cod), 8)]
+        cod_nou = [[cod[0]], [cod[1]]]
+
+        for i in range(2, len(cod)):
+            cod_nou[i%2].append(cod[i])
+
+
+        string_cod_nou = "".join("".join(x for x in linie) for linie in cod_nou)
+        return string_cod_nou
+
+    elif versiune == 4 or versiune == 6:
+        cod = [string_cod[i:i + 8] for i in range(0, len(string_cod), 8)]
+        cod_nou = [[cod[0]], [cod[1]], [cod[2]], [cod[3]]]
+
+        for i in range(4, len(cod)):
+            cod_nou[i % 4].append(cod[i])
+
+        string_cod_nou = "".join("".join(x for x in linie) for linie in cod_nou)
+        return string_cod_nou
+    #facem rearanjarea pentru varianta 5
+    else:
+        cod = [string_cod[i:i + 8] for i in range(0, len(string_cod), 8)]
+        cod_nou = [[cod[0]], [cod[1]], [cod[2]], [cod[3]]]
+
+        for i in range(4, len(cod)):
+            if i == 44:
+                cod_nou[2].append(cod[i])
+            elif i == 45:
+                cod_nou[3].append(cod[i])
+            else:
+                cod_nou[i % 4].append(cod[i])
+
+        string_cod_nou = "".join("".join(x for x in linie) for linie in cod_nou)
+        return string_cod_nou
+
+def scapam_11EC(test):
+    # formam o matrice cu elemente de 8 biti
+    cod = [test[i:i + 8] for i in range(0, len(test), 8)]
+
+    i = len(cod) - 1
+
+    # aici scapam de valorile 11 si EC, plecam de la sfarsit spre inceput
+    while i >= 0:
+        if cod[i] == "11101100" or cod[i] == "00010001":
+            cod.pop(i)
+            i -= 1
+        else:
+            break
+
+    string_cod = "".join(cod)
+
+    # formam o matrice cu elemente de 4 biti
+    cod = [string_cod[i:i + 4] for i in range(0, len(string_cod), 4)]
+
+    # aici scapam de cei 4 biti de terminator si de cei 4 biti ai modului segmentului
+    cod.pop(0)
+    cod.pop()
+
+    string_cod = "".join(cod)
+    # formam inapoi o matrice de 8 biti
+    cod = [string_cod[i:i + 8] for i in range(0, len(string_cod), 8)]
+
+    # aici scapam de segment 0 count (care are 8 biti pentru versiunile noastre)
+    cod.pop(0)
+
+    # aici avem string-ul final, trecerea din binar in string
+    s = ''.join(chr(int(linie, 2)) for linie in cod)
+    print(s)
+
+def aplica_masca(QR,M):
+
+    for i in range(len(QR)):
+        for j in range(len(QR[i])):
+            if M[i][j] != None:
+                QR[i][j] = QR[i][j]^M[i][j]
+
+    return QR
+
 def zigzag(QR, M3):
 
     aux = len(QR)                       # Dim QR
@@ -459,197 +673,65 @@ def scrierecodQR():
     for i in range(len(Lista_masti[7])):
         for j in range(len(Lista_masti[7][i])):
             if Lista_masti[7][i][j] != None:
-                if (i+j)%3 == 0:
+                if (
+                        ((i+j)%6 == 0)
+                    or
+                        ((i-j-2)%6 == 0)
+                    or
+                        ((i-j+2)%6 == 0)
+                    or
+                        ((i-j-3)%6 == 0 and (i%3)!=0)
+                ):
                     Lista_masti[7][i][j] = 1
 
 
-    for i in range(len(Lista_masti)):
-        print(f"Masca {i}:")
-        for j in range(len(Lista_masti[i])):
-            print(Lista_masti[i][j])
-        print()
+    # for i in range(len(Lista_masti)):
+    #     print(f"Masca {i}:")
+    #     for j in range(len(Lista_masti[i])):
+    #         print(Lista_masti[i][j])
+    #     print()
+
+    # QR = aplica_masca(QR,Lista_masti[0])
 
 
     matrice_to_png(QR, "outputASC.png", 20)
 
     return
 
+##########################################################
+
 # Citire cod QR
-
-
 
 def citirecodQR():
     print()
     fisier = input("Fisierul pe care doresti sa il transformi in sir de caractere: ")
     print(fisier)
 
-    SCALE = 20  # Factor de scalare pentru imaginea mărită
+    scale = detecteaza_scale("outputASC6.png")
 
-    # Dimensiunile diferitelor variante de QR (dimensiune matrice + zone rezervate)
-    dimensiuni_qr = {
-        1: 21, 2: 25, 3: 29, 4: 33, 5: 37, 6: 41
-    }
+    img_mica = scale_down("outputASC6.png", scale)  # scapam de scale
 
-    def culoare_pixel(img, x, y):
-        """Returnează 1 pentru negru și 0 pentru alb, ținând cont de scalare."""
-        r, g, b = img.getpixel((x * SCALE, y * SCALE))  # Citim doar pixelul relevant
-        return 1 if (r, g, b) == (0, 0, 0) else 0
+    width, height = img_mica.size
 
-    def este_zona_rezervata(x, y, versiune):
-        """Verifică dacă pixelul (x, y) face parte dintr-o zonă rezervată pentru varianta dată."""
-        dim = dimensiuni_qr[versiune]
+    ok = True
+    for i in range(len(lungime_matrice)):
+        if lungime_matrice[i] == height:
+            dimensiune_qr = lungime_matrice[i]
+            dim_versiune = lungime_biti[i]
+            version = i + 1
+            break
+    else:
+        print("Codul QR este de tipul unei variante > 6!")
+        ok = False
 
-        # Finder patterns (colțurile stânga-sus, dreapta-sus, stânga-jos)
-        if (x < 9 and y < 9) or (x < 9 and y >= dim - 9) or (x >= dim - 9 and y < 9):
-            return True
+    if ok != False:
 
-        # Separatoare (linii albe de 1 pixel în jurul finder patterns)
-        if x == 6 or y == 6:
-            return True
+        qr_bits = extrage_bits_qr(img_mica, dimensiune_qr, dim_versiune, version)
 
-        # Alignment pattern (pentru versiunile 2-6, se află la diferite coordonate)
-        if versiune >= 2:
-            if 6 <= x <= dim - 7 and 6 <= y <= dim - 7:
-                return True
-
-        # Zonele de format (lângă finder patterns)
-        if (y == 8 or x == 8) and not (x > 8 and y > 8):
-            return True
-
-        return False
-
-    def extrage_bits_qr(img_path, versiune):
-        """Extrage secvența de biți dintr-un cod QR, excluzând zonele rezervate, pentru orice variantă."""
-        dim = dimensiuni_qr[versiune]
-        img = Image.open(img_path).convert('RGB')
-
-        qr_bits = []
-        directie = -1  # -1 pentru sus, +1 pentru jos
-        j = dim - 1  # Începem din colțul din dreapta jos
-
-        while j > 0:
-            if j == 6:  # Sărim coloana de aliniere
-                j -= 1
-
-            i = dim - 1 if directie == -1 else 0  # Pornim de jos sau de sus
-            while (i >= 0 and directie == -1) or (i < dim and directie == 1):
-                for col in [j, j - 1]:
-                    if len(qr_bits) == (dim * dim - (dim // 7) * 5):  # Dimensiune finală corectă
-                        return "".join(map(str, qr_bits))
-
-                    if not este_zona_rezervata(i, col, versiune):
-                        qr_bits.append(culoare_pixel(img, col, i))
-
-                i += directie
-
-            directie *= -1
-            j -= 2  # Trecem la următoarea pereche de coloane
-
-        return "".join(map(str, qr_bits))
-
-    def eliminare_ECC(cod):
-
-        # dictionarul cu datele pentru fiecare varianta, toate pe error-correction high
-        qr = {
-            1: {"marime_biti": 72, "total_bytes+ecc": 26},
-            2: {"marime_biti": 128, "total_bytes+ecc": 44},
-            3: {"marime_biti": 208, "total_bytes+ecc": 70},
-            4: {"marime_biti": 288, "total_bytes+ecc": 100},
-            5: {"marime_biti": 368, "total_bytes+ecc": 134},
-            6: {"marime_biti": 480, "total_bytes+ecc": 172},
-        }
-        for versiune in qr.keys():
-            if qr[versiune]["total_bytes+ecc"] == len(cod) / 8:
-                return cod[:qr[versiune]["marime_biti"]], versiune
-        else:
-            print("Codul QR este de o varianta > 6")
-            return -1, -1
-
-    def rearanjare_cod(string_cod, versiune):
-
-        # facem rearanjarea pentru fiecare tip de varianta
-        if versiune == 1 or versiune == 2:
-            return string_cod
-
-        elif versiune == 3:
-            cod = [string_cod[i:i + 8] for i in range(0, len(string_cod), 8)]
-            cod_nou = [[cod[0]], [cod[1]]]
-
-            for i in range(2, len(cod)):
-                cod_nou[i % 2].append(cod[i])
-
-            string_cod_nou = "".join("".join(x for x in linie) for linie in cod_nou)
-            return string_cod_nou
-
-        elif versiune == 4 or versiune == 6:
-            cod = [string_cod[i:i + 8] for i in range(0, len(string_cod), 8)]
-            cod_nou = [[cod[0]], [cod[1]], [cod[2]], [cod[3]]]
-
-            for i in range(4, len(cod)):
-                cod_nou[i % 4].append(cod[i])
-
-            string_cod_nou = "".join("".join(x for x in linie) for linie in cod_nou)
-            return string_cod_nou
-        # facem rearanjarea pentru varianta 5
-        else:
-            cod = [string_cod[i:i + 8] for i in range(0, len(string_cod), 8)]
-            cod_nou = [[cod[0]], [cod[1]], [cod[2]], [cod[3]]]
-
-            for i in range(4, len(cod)):
-                if i == 44:
-                    cod_nou[2].append(cod[i])
-                elif i == 45:
-                    cod_nou[3].append(cod[i])
-                else:
-                    cod_nou[i % 4].append(cod[i])
-
-            string_cod_nou = "".join("".join(x for x in linie) for linie in cod_nou)
-            return string_cod_nou
-
-    def scapam_11EC(test):
-        # formam o matrice cu elemente de 8 biti
-        cod = [test[i:i + 8] for i in range(0, len(test), 8)]
-
-        i = len(cod) - 1
-
-        # aici scapam de valorile 11 si EC, plecam de la sfarsit spre inceput
-        while i >= 0:
-            if cod[i] == "11101100" or cod[i] == "00010001":
-                cod.pop(i)
-                i -= 1
-            else:
-                break
-
-        string_cod = "".join(cod)
-
-        # formam o matrice cu elemente de 4 biti
-        cod = [string_cod[i:i + 4] for i in range(0, len(string_cod), 4)]
-
-        # aici scapam de cei 4 biti de terminator si de cei 4 biti ai modului segmentului
-        cod.pop(0)
-        cod.pop()
-
-        string_cod = "".join(cod)
-        # formam inapoi o matrice de 8 biti
-        cod = [string_cod[i:i + 8] for i in range(0, len(string_cod), 8)]
-
-        # aici scapam de segment 0 count (care are 8 biti pentru versiunile noastre)
-        cod.pop(0)
-
-        # aici avem string-ul final, trecerea din binar in string
-        s = ''.join(chr(int(linie, 2)) for linie in cod)
-        print(s)
-
-    versiune = 4  # Poți schimba versiunea între 1 și 6
-    qr_bits = extrage_bits_qr(fisier, versiune)
-
-    # DE AICI MERGE BINE, QR_BITS NU E CORECT GENERAT
-    zz = qr_bits
-
-    s, z = eliminare_ECC(zz)
-    if s != -1:
-        test = rearanjare_cod(s, z)
-        scapam_11EC(test)
+        s, z = eliminare_ECC(qr_bits)
+        if s != -1:
+            test = rearanjare_cod(s, z)
+            scapam_11EC(test)
 
     return
 
