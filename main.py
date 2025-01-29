@@ -25,8 +25,6 @@ def culoare_pixel(img, x, y):
 
     if isinstance(pixel, int):  # Imagine alb-negru
         return 1 if pixel == 0 else 0
-    # elif isinstance(pixel, tuple):  # Imagine RGB
-    #     return 1 if pixel == (0, 0, 0) else 0
 
 #verificam daca pixelul (x, y) este intr-unul din cele 3/4 patratele fixe, caz in care nu il bagam in string-ul final
 def este_zona_rezervata(x, y, dim, version):
@@ -111,11 +109,6 @@ def detecteaza_scale(img_path):
                 break
             else:
                 scale += 1
-        # elif isinstance(pixel, tuple):  # Imagine RGB (convertim la B/W)
-        #     if pixel == (255, 255, 255):
-        #         break
-        #     else:
-        #         scale += 1
 
         x += 1
         y += 1
@@ -165,7 +158,6 @@ def rearanjare_cod(string_cod, versiune):
 
         string_cod_nou = "".join("".join(x for x in linie) for linie in cod_nou)
         return string_cod_nou
-    #facem rearanjarea pentru varianta 5
     else:
         cod = [string_cod[i:i + 8] for i in range(0, len(string_cod), 8)]
         cod_nou = [[cod[0]], [cod[1]], [cod[2]], [cod[3]]]
@@ -691,8 +683,7 @@ def scrierecodQR():
     #         print(Lista_masti[i][j])
     #     print()
 
-    # QR = aplica_masca(QR,Lista_masti[0])
-
+    QR = aplica_masca(QR,Lista_masti[1])
 
     matrice_to_png(QR, "outputASC.png", 20)
 
@@ -707,9 +698,9 @@ def citirecodQR():
     fisier = input("Fisierul pe care doresti sa il transformi in sir de caractere: ")
     print(fisier)
 
-    scale = detecteaza_scale("outputASC6.png")
+    scale = detecteaza_scale(fisier)
 
-    img_mica = scale_down("outputASC6.png", scale)  # scapam de scale
+    img_mica = scale_down(fisier, scale)  # scapam de scale
 
     width, height = img_mica.size
 
