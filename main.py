@@ -409,7 +409,7 @@ def format_in_qr(QR, biti):
     for i in range(8):
         QR[8][aux - 8 + i] = int(biti[7 + i])
 
-    for i in range(6):
+    for i in range(7):
         QR[aux - 1 - i][8] = int(biti[i])
 
 
@@ -425,7 +425,12 @@ def scrierecodQR():
     print()
     secv = input("Sirul de caractere ce doresti a transforma in cod QR: ")
     secv = secv.strip()
+
     fisier = input("Fisiere de output: ")
+    while fisier.endswith(".png") == False or fisier[0] == ".":
+        print("Fisierul trebuie sa se termine cu \".png\" ")
+        fisier = input("Fisiere de output: ")
+
 
     # din https://www.nayuki.io/page/creating-a-qr-code-step-by-step
 
