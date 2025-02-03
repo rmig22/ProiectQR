@@ -3,6 +3,7 @@
 #  PROIECT COD QR  #
 ####################
 ####################
+import copy
 
 # Scriere cod QR
 
@@ -25,6 +26,91 @@ def culoare_pixel(img, x, y):
 
     if isinstance(pixel, int):  # Imagine alb-negru
         return 1 if pixel == 0 else 0
+
+# def demascare_in_functie_de_versiune(qr1, version, param):
+#     # vs 1
+#     if version == 1:
+#         if masca_decisa == 0:
+#             for i in range(len(qr1)):
+#                 for j in range(len(qr1)):
+#                     if j % 3 == 0:
+#                         if i > 7 and i < len(qr1)-8 and j != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and len(qr1)-8 and i != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and i > 7:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#         if masca_decisa == 1:
+#             for i in range(len(qr1)):
+#                 for j in range(len(qr1)):
+#                     if (i + j) % 3 == 0:
+#                         if i > 7 and i < 13 and j != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and j < 13 and i != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and i > 7:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#         if masca_decisa == 2:
+#             for i in range(len(qr1)):
+#                 for j in range(len(qr1)):
+#                     if (i + j) % 2 == 0:
+#                         if i > 7 and i < 13 and j != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and j < 13 and i != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and i > 7:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#         if masca_decisa == 3:
+#             for i in range(len(qr1)):
+#                 for j in range(len(qr1)):
+#                     if i % 2 == 0:
+#                         if i > 7 and i < 13 and j != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and j < 13 and i != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and i > 7:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#         if masca_decisa == 4:
+#             for i in range(len(qr1)):
+#                 for j in range(len(qr1)):
+#                     if ((i * j) % 3 + i * j) % 2 == 0:
+#                         if i > 7 and i < 13 and j != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and j < 13 and i != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and i > 7:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#         if masca_decisa == 5:
+#             for i in range(len(qr1)):
+#                 for j in range(len(qr1)):
+#                     if ((i * j) % 3 + i + j) % 2 == 0:
+#                         if i > 7 and i < 13 and j != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and j < 13 and i != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and i > 7:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#         if masca_decisa == 6:
+#             for i in range(len(qr1)):
+#                 for j in range(len(qr1)):
+#                     if (i / 2 + j / 3) % 2 == 0:
+#                         if i > 7 and i < 13 and j != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and j < 13 and i != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and i > 7:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#         if masca_decisa == 7:
+#             for i in range(len(qr1)):
+#                 for j in range(len(qr1)):
+#                     if (i * j) % 2 + (i * j) % 3 == 0:
+#                         if i > 7 and i < 13 and j != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and j < 13 and i != 6:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+#                         elif j > 7 and i > 7:
+#                             qr1[i][j] = qr1[i][j] ^ 1
+
 
 #verificam daca pixelul (x, y) este intr-unul din cele 3/4 patratele fixe, caz in care nu il bagam in string-ul final
 def este_zona_rezervata(x, y, dim, version):
@@ -69,7 +155,7 @@ def este_zona_rezervata(x, y, dim, version):
     return False
 
  #extragem din PNG doar bitii de care avem nevoie
-def extrage_bits_qr(img, dim_qr, biti, version):
+def extrage_bits_qr(mat, dim_qr, biti, version):
     qr_bits = []
     directie = -1  # -1 pentru sus, +1 pentru jos
     j = dim_qr - 1
@@ -85,7 +171,7 @@ def extrage_bits_qr(img, dim_qr, biti, version):
                     return "".join(map(str, qr_bits))
 
                 if 0 <= col < dim_qr and not este_zona_rezervata(i, col, dim_qr, version):
-                    qr_bits.append(culoare_pixel(img, col, i))
+                    qr_bits.append(mat[col][i])
 
             i += directie
 
@@ -207,12 +293,12 @@ def scapam_11EC(test):
     s = ''.join(chr(int(linie, 2)) for linie in cod)
     print(s)
 
-def aplica_masca(QR,M):
+def aplica_masca(QR,M, cop):
 
     for i in range(len(QR)):
         for j in range(len(QR[i])):
             if M[i][j] != None:
-                QR[i][j] = QR[i][j]^M[i][j]
+                QR[i][j] = cop[i][j]^M[i][j]
 
     return QR
 
@@ -326,7 +412,6 @@ def format_in_qr(QR, biti):
     for i in range(6):
         QR[aux - 1 - i][8] = int(biti[i])
 
-    QR[aux - 1 - 6][8] = 1
 
     for i in range(2):
         QR[8 - i][8] = int(biti[7+i])
@@ -584,10 +669,11 @@ def scrierecodQR():
         QR[aux-7][aux-7] = 1
 
     QR[aux-8][8] = 1
-
     # 6. Draw codewords and remainder
 
     QR = zigzag(QR,M3)
+     #for linie in QR:
+         #print(*QR)
 
     # 7. Try applying each mask
 
@@ -732,19 +818,181 @@ def scrierecodQR():
     #         print(Lista_masti[i][j])
     #     print()
 
-    QR = aplica_masca(QR,Lista_masti[1])
 
-    masca = 1
+    # for i in range(VQRSize[vs]):
+    #     print(QR[i])
+    #
+    # print()
+###############################################################################################
+    min_puncte = 100000
+    #cop_QR = copy.deepcopy(QR)
+    cop_QR = [[0 for _ in range(VQRSize[vs])] for _ in range(VQRSize[vs])]
+    for i in range(VQRSize[vs]):
+        for j in range(VQRSize[vs]):
+            cop_QR[i][j] = QR[i][j]
+    for m in range(8):
+
+        QR = aplica_masca(QR,Lista_masti[m], cop_QR)
+
+        masca = m
+
+        biti = creare_format(masca)
+
+
+        QR = format_in_qr(QR, biti)
+
+        #for i in range(VQRSize[vs]):
+             #print(cop_QR[i])
+
+
+        puncte_secvente = 0
+        nr=0 #nr secvente total
+        secv_act = 1
+        secv_act_1 = 1
+        for i in range (VQRSize[vs]):
+            secv_act = 1
+            secv_act_1 = 1
+            for j in range(1, VQRSize[vs]):
+    #pentru orizontala
+                if QR[i][j]==QR[i][j-1]:
+                    secv_act+=1
+                else:
+                    if secv_act >= 5:
+                        puncte_secvente += (secv_act - 2)
+                        nr += 1
+                    secv_act=1
+    #paralel pentru verticala
+                if QR[j][i]==QR[j-1][i]:
+                    secv_act_1+=1
+                else:
+                    if secv_act_1 >= 5:
+                        puncte_secvente += (secv_act_1-2)
+                        nr += 1
+                    secv_act_1=1
+
+
+            if secv_act >= 5:
+                puncte_secvente += (secv_act - 2)
+                nr += 1
+            if secv_act_1 >= 5:
+                puncte_secvente += (secv_act_1 - 2)
+                nr += 1
+        #print (nr)
+        print(f"masca {m}")
+
+    # nr=0 #nr secvente total
+    # secv_act = 1
+    # for i in range (VQRSize[vs]):
+    #     secv_act = 1
+    #     for j in range(1, VQRSize[vs]):
+    #         if QR[j][i]==QR[j-1][i]:
+    #             secv_act+=1
+    #         else:
+    #             if secv_act >= 5:
+    #                 puncte_secvente += (secv_act-2)
+    #                 nr += 1
+    #             secv_act=1
+    #     if secv_act >= 5:
+    #         puncte_secvente += (secv_act - 2)
+    #         nr += 1
+    # print (nr)
+        print(puncte_secvente)
+
+        nr_boxuri=0
+        for i in range(VQRSize[vs]-1):
+            for j in range(VQRSize[vs]-1):
+                if QR[i][j] == QR[i+1][j+1] and QR[i+1][j] == QR[i][j+1] and QR[i][j] == QR[i][j+1]:
+                    nr_boxuri+=1
+        nr_boxuri = nr_boxuri*3
+        print(nr_boxuri)
+
+        copie_qr = [[0 for _ in range((VQRSize[vs]+8))] for _ in range((VQRSize[vs]+8))]
+        for i in range(VQRSize[vs]):
+            for j in range(VQRSize[vs]):
+                copie_qr[i + 4][j + 4] = QR[i][j]
+
+    # for rand in copie_qr:
+    #     print(rand)
+        finding_pat = 0
+        for i in range((VQRSize[vs]+4)):
+            for j in range((VQRSize[vs]-3)):
+            # 0 0 0 0 1 0 1 1 1 0 1 0 - pattern
+
+            #pe linie
+                if copie_qr[i][j]==0 and copie_qr[i][j+1]==0 and copie_qr[i][j+2]==0 and copie_qr[i][j+3]==0 and copie_qr[i][j+4]==1 and copie_qr[i][j+5]==0 and copie_qr[i][j+6]==1 and copie_qr[i][j+7]==1 and copie_qr[i][j+8]==1 and copie_qr[i][j+9]==0 and copie_qr[i][j+10]==1 and copie_qr[i][j+11]==0:
+                    finding_pat+=1
+
+
+                elif copie_qr[i][j] == 0 and copie_qr[i][j + 1] == 1 and copie_qr[i][j + 2] == 0 and copie_qr[i][j + 3] == 1 and copie_qr[i][j + 4] == 1 and copie_qr[i][j + 5] == 1 and copie_qr[i][j + 6] == 0 and copie_qr[i][j + 7] == 1 and copie_qr[i][j + 8] == 0 and copie_qr[i][j + 9] == 0 and copie_qr[i][j + 10] == 0 and copie_qr[i][j+11] == 0:
+                    finding_pat += 1
+
+             ###pe coloana
+                if copie_qr[j][i]==0 and copie_qr[j+1][i]==0 and copie_qr[j+2][i]==0 and copie_qr[j+3][i]==0 and copie_qr[j+4][i]==1 and copie_qr[j+5][i]==0 and copie_qr[j+6][i]==1 and copie_qr[j+7][i]==1 and copie_qr[j+8][i]==1 and copie_qr[j+9][i]==0 and copie_qr[j+10][i]==1 and copie_qr[j+11][i]==0:
+                    finding_pat+=1
+
+
+                elif copie_qr[j][i] == 0 and copie_qr[j + 1][i] == 1 and copie_qr[j + 2][i] == 0 and copie_qr[j + 3][i] == 1 and copie_qr[j + 4][i] == 1 and copie_qr[j + 5][i] == 1 and copie_qr[j + 6][i] == 0 and copie_qr[j + 7][i] == 1 and copie_qr[j + 8][i] == 0 and copie_qr[j + 9][i] == 0 and copie_qr[j + 10][i] == 0 and copie_qr[j+11][i] == 0:
+                    finding_pat += 1
+        finding_pat*=40
+        print(finding_pat)
+        nr_1=0
+        nr_0=1
+        for i in range(VQRSize[vs]):
+            for j in range(VQRSize[vs]):
+                if QR[i][j]==1:
+                    nr_1+=1
+        dim_total= VQRSize[vs]**2
+    #print(f"{(100 * float(nr_1) / float(dim_total)):.3f}%")
+    #print(f"{(100 * float(nr_0) / float(dim_total)):.3f}%")
+        proportie_biti_1 = 100 * float(nr_1) / float(dim_total)
+        if proportie_biti_1 > 45 and proportie_biti_1 < 55:
+            pct_prop=0
+        elif proportie_biti_1 >= 40 and proportie_biti_1 <= 60:
+            pct_prop = 10
+        elif proportie_biti_1 >= 35 and proportie_biti_1 <= 65:
+            pct_prop = 20
+        elif proportie_biti_1 >= 30 and proportie_biti_1 <= 70:
+            pct_prop = 30
+        elif proportie_biti_1 >= 25 and proportie_biti_1 <= 75:
+            pct_prop = 40
+        elif proportie_biti_1 >= 20 and proportie_biti_1 <= 80:
+            pct_prop = 50
+        elif proportie_biti_1 >= 15 and proportie_biti_1 <= 85:
+            pct_prop = 60
+        elif proportie_biti_1 >= 10 and proportie_biti_1 <= 90:
+            pct_prop = 70
+        elif proportie_biti_1 >= 5 and proportie_biti_1 <= 95:
+            pct_prop = 80
+        elif proportie_biti_1 >= 0 and proportie_biti_1 <= 100:
+            pct_prop = 90
+        print(pct_prop)
+
+        total_puncte = puncte_secvente + nr_boxuri + finding_pat +pct_prop
+        print(total_puncte)
+        if min_puncte > total_puncte:
+            min_puncte = total_puncte
+            masca_potrivita = m
+    #print(min_puncte)
+    print(masca_potrivita)
+
+    QR = aplica_masca(cop_QR, Lista_masti[masca_potrivita], cop_QR)
+
+    masca =masca_potrivita
 
     biti = creare_format(masca)
 
     QR = format_in_qr(QR, biti)
 
+
+
+
+
+
     matrice_to_png(QR, "outputASC.png", 20)
 
     return
 
-##########################################################
+########################################################################################################
 
 # Citire cod QR
 
@@ -756,8 +1004,19 @@ def citirecodQR():
     scale = detecteaza_scale(fisier)
 
     img_mica = scale_down(fisier, scale)  # scapam de scale
-
+    # for i in range (len(img_mica)):
+    #     print (img_mica[i])
+    pixels = list(img_mica.getdata())
     width, height = img_mica.size
+
+
+    qr1 = [pixels[i:i + width] for i in range(0, len(pixels), width)]
+    for i in range(len(qr1)):
+        for j in range(len(qr1[i])):
+            qr1[i][j] = 0 if qr1[i][j] == 255 else 1
+    # for row in qr1:
+    #     print(row)
+
 
     ok = True
     for i in range(len(lungime_matrice)):
@@ -772,12 +1031,71 @@ def citirecodQR():
 
     if ok != False:
 
-        qr_bits = extrage_bits_qr(img_mica, dimensiune_qr, dim_versiune, version)
+#######################################################################################
+#de la 8 format bits
+        pixeli_decidere_masca = [qr1[8][2], qr1[8][3], qr1[8][4]]
+        if pixeli_decidere_masca[0] == 1 and pixeli_decidere_masca[1] == 1 and pixeli_decidere_masca[2] == 1:
+            masca_decisa = 0
+        elif pixeli_decidere_masca[0] == 1 and pixeli_decidere_masca[1] == 1 and pixeli_decidere_masca[2] == 0:
+            masca_decisa = 1
+        elif pixeli_decidere_masca[0] == 1 and pixeli_decidere_masca[1] == 0 and pixeli_decidere_masca[2] == 1:
+            masca_decisa = 2
+        elif pixeli_decidere_masca[0] == 1 and pixeli_decidere_masca[1] == 0 and pixeli_decidere_masca[2] == 0:
+            masca_decisa = 3
+        elif pixeli_decidere_masca[0] == 0 and pixeli_decidere_masca[1] == 1 and pixeli_decidere_masca[2] == 1:
+            masca_decisa = 4
+        elif pixeli_decidere_masca[0] == 0 and pixeli_decidere_masca[1] == 1 and pixeli_decidere_masca[2] == 0:
+            masca_decisa = 5
+        elif pixeli_decidere_masca[0] == 0 and pixeli_decidere_masca[1] == 0 and pixeli_decidere_masca[2] == 1:
+            masca_decisa = 6
+        elif pixeli_decidere_masca[0] == 0 and pixeli_decidere_masca[1] == 0 and pixeli_decidere_masca[2] == 0:
+            masca_decisa = 7
+        print(masca_decisa)
+        for i in range(len(qr1)):
+            for j in range(len(qr1[i])):
+                demasc = este_zona_rezervata(i+1, j+1, len(qr1)+1 , version)
+                if demasc == False:
+                    if masca_decisa == 0:
+                        if j % 3 == 0:
+                            qr1[i][j] = qr1[i][j] ^ 1
+                    elif masca_decisa == 1:
+                        if (i+j) % 3 == 0:
+                            qr1[i][j] = qr1[i][j] ^ 1
+                    elif masca_decisa == 2:
+                        if (i+j) % 2 == 0:
+                            qr1[i][j] = qr1[i][j] ^ 1
+                    elif masca_decisa == 3:
+                        if i%2 == 0:
+                            qr1[i][j] = qr1[i][j] ^ 1
+                    elif masca_decisa == 4:
+                        if ((i*j) % 3 + i*j)%2 == 0:
+                            qr1[i][j] = qr1[i][j] ^ 1
+                    elif masca_decisa == 5:
+                        if ((i*j) % 3 + i+j)%2 == 0:
+                            qr1[i][j] = qr1[i][j] ^ 1
+                    elif masca_decisa == 6:
+                        if (i/2 + j/3) % 2 ==0:
+                            qr1[i][j] = qr1[i][j] ^ 1
+                    elif masca_decisa == 7:
+                        x, y=i, j
+                        if (x*y)%2 + (x*y)%3==0:
+                            qr1[i][j] = qr1[i][j] ^ 1
+
+
+
+        for i in range(len(qr1)):
+            print(qr1[i])
+
+
+        qr_bits = extrage_bits_qr(qr1, dimensiune_qr, dim_versiune, version)
 
         s, z = eliminare_ECC(qr_bits)
         if s != -1:
             test = rearanjare_cod(s, z)
             scapam_11EC(test)
+
+
+        matrice_to_png(qr1, "a.png", 20)
 
     return
 
