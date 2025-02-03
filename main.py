@@ -425,6 +425,7 @@ def scrierecodQR():
     print()
     secv = input("Sirul de caractere ce doresti a transforma in cod QR: ")
     secv = secv.strip()
+    fisier = input("Fisiere de output: ")
 
     # din https://www.nayuki.io/page/creating-a-qr-code-step-by-step
 
@@ -988,7 +989,7 @@ def scrierecodQR():
 
 
 
-    matrice_to_png(QR, "outputASC.png", 20)
+    matrice_to_png(QR, fisier, 20)
 
     return
 
@@ -1105,20 +1106,20 @@ print("Meniu:")
 
 optiune = -1
 
-while optiune != 1 and optiune != 2 and optiune != 3:
+while optiune != "1" and optiune != "2" and optiune != "3":
     print()
     print("1) Scriere cod QR")
     print("2) Citire cod QR")
     print("3) Iesire din program\n")
 
-    optiune = int(input("Ce optiune alegi: "))
+    optiune = input("Ce optiune alegi: ")
 
-    if optiune != 1 and optiune != 2 and optiune != 3:
+    if optiune != "1" and optiune != "2" and optiune != "3":
         print("\nEroare, optiune gresita, mai incercati!\n")
 
-    if optiune == 1:
+    if optiune == "1":
         optiune = 0 # PENTRU A RULA CONTINUU PROGRAMUL
         scrierecodQR()
-    if optiune == 2:
+    if optiune == "2":
         optiune = 0 # PENTRU A RULA CONTINUU PROGRAMUL
         citirecodQR()
