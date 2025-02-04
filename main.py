@@ -154,7 +154,7 @@ def este_zona_rezervata(x, y, dim, version):
 
     return False
 
- #extragem din PNG doar bitii de care avem nevoie
+#extragem din PNG doar bitii de care avem nevoie
 def extrage_bits_qr(mat, dim_qr, biti, version):
     qr_bits = []
     directie = -1  # -1 pentru sus, +1 pentru jos
@@ -170,8 +170,8 @@ def extrage_bits_qr(mat, dim_qr, biti, version):
                 if len(qr_bits) == biti:  #am ajuns la lungimea string-ului final(cu tot cu ECC codes)
                     return "".join(map(str, qr_bits))
 
-                if 0 <= col < dim_qr and not este_zona_rezervata(i, col, dim_qr, version):
-                    qr_bits.append(mat[col][i])
+                if 0 <= col < dim_qr and not este_zona_rezervata(i-1, col-1, dim_qr-1, version):  ###############modifica +1
+                    qr_bits.append(mat[i-1][col-1])
 
             i += directie
 
@@ -423,8 +423,10 @@ def format_in_qr(QR, biti):
 
 def scrierecodQR():
     print()
-    secv = input("Sirul de caractere ce doresti a transforma in cod QR: ")
-    secv = secv.strip()
+    secv = ""
+    while len(secv) > 58 or secv == "":
+        secv = input("Sirul de caractere ce doresti a transforma in cod QR (maxim 58 de caractere): ")
+        secv = secv.strip()
 
     fisier = input("Fisiere de output: ")
     while fisier.endswith(".png") == False or fisier[0] == ".":
@@ -989,11 +991,6 @@ def scrierecodQR():
 
     QR = format_in_qr(QR, biti)
 
-
-
-
-
-
     matrice_to_png(QR, fisier, 20)
 
     return
@@ -1056,10 +1053,28 @@ def citirecodQR():
             masca_decisa = 6
         elif pixeli_decidere_masca[0] == 0 and pixeli_decidere_masca[1] == 0 and pixeli_decidere_masca[2] == 0:
             masca_decisa = 7
-        print(masca_decisa)
+        aux = len(qr1)
+
+        for i in range(6):
+            qr1[8][i] = 0
+        qr1[8][7] = 0
+
+        for i in range(8):
+            qr1[8][aux - 8 + i] = 0
+
+        for i in range(7):
+            qr1[aux - 1 - i][8] = 0
+
+
+        for i in range(2):
+            qr1[8 - i][8] = 0
+
+        for i in range(6):
+            qr1[5 - i][8] = 0
+        matrice_to_png(qr1, "a.png", 20)
         for i in range(len(qr1)):
             for j in range(len(qr1[i])):
-                demasc = este_zona_rezervata(i+1, j+1, len(qr1)+1 , version)
+                demasc = este_zona_rezervata(i, j, len(qr1) , version) ##e bine asa
                 if demasc == False:
                     if masca_decisa == 0:
                         if j % 3 == 0:
@@ -1083,25 +1098,17 @@ def citirecodQR():
                         if (i/2 + j/3) % 2 ==0:
                             qr1[i][j] = qr1[i][j] ^ 1
                     elif masca_decisa == 7:
-                        x, y=i, j
-                        if (x*y)%2 + (x*y)%3==0:
+                        if (i*j)%2 + (i*j)%3==0:
                             qr1[i][j] = qr1[i][j] ^ 1
 
 
 
-        for i in range(len(qr1)):
-            print(qr1[i])
-
-
-        qr_bits = extrage_bits_qr(qr1, dimensiune_qr, dim_versiune, version)
+        qr_bits = extrage_bits_qr(qr1, len(qr1)+1, dim_versiune, version)
 
         s, z = eliminare_ECC(qr_bits)
         if s != -1:
             test = rearanjare_cod(s, z)
             scapam_11EC(test)
-
-
-        matrice_to_png(qr1, "a.png", 20)
 
     return
 
