@@ -44,3 +44,9 @@ https://www.youtube.com/watch?v=pamazHwk0hg
 Pentru a face trecerea din binar in string:
 
 https://www.geeksforgeeks.org/convert-binary-to-string-using-python/
+
+Pentru decidere/gasire masca:
+
+https://imgur.com/a/FvtpZ2o
+
+https://www.reddit.com/r/LearnUselessTalents/comments/esidvc/the_simplest_guide_to_read_qr_codes/
