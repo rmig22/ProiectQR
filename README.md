@@ -44,3 +44,7 @@ https://www.youtube.com/watch?v=pamazHwk0hg
 Pentru a face trecerea din binar in string:
 
 https://www.geeksforgeeks.org/convert-binary-to-string-using-python/
+
+Pentru deciderea/gasirea mastii:
+
+https://imgur.com/a/FvtpZ2o
