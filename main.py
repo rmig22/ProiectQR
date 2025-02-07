@@ -58,14 +58,13 @@ def este_zona_rezervata(x, y, dim, version):
     elif version == 6:
         coord = [(34, 34)]
         for cx, cy in coord:
-            if cx - 2 <= x <= cx + 2 and cy - 2 <= y <= cy + 2:  # Only 5x5 square
+            if cx - 2 <= x <= cx + 2 and cy - 2 <= y <= cy + 2:  
                 return True
         return False
     return False
 
- #extragem din PNG doar bitii de care avem nevoie
+ #extragem doar bitii de care avem nevoie
 def extrage_bits_qr(mat, dim_qr, biti, version):
-    nr = 0
     qr_bits = []
     aux = len(mat)                       # Dim QR
     cnt = 0                             # Contor M3
@@ -80,7 +79,6 @@ def extrage_bits_qr(mat, dim_qr, biti, version):
             for col in [j, j - 1]:
                 # if dim_qr == len(qr_bits):
                 #     print(dim_qr, len(qr_bits))
-                nr += 1
                 if not (
                     (i >= aux - 8 and col <= 8) or
                     (i == 6 or col == 6) or
@@ -89,9 +87,7 @@ def extrage_bits_qr(mat, dim_qr, biti, version):
                     (aux - 9 <= i <= aux - 5 and aux - 9 <= col <= aux - 5 and aux != 21 and aux!=41)
                 ):
                     if este_zona_rezervata(i, col, aux, version) == False:
-                        #if version == 6 and matrix[i][col]==0:
                         qr_bits.append(mat[i][col])
-                        nr-=1
 
             i += directie
 
@@ -761,8 +757,8 @@ def scrierecodQR():
                 ):
                     Lista_masti[7][i][j] = 1
 
-    min_puncte = 100000
-
+    min_puncte = 1000000
+    #verificam criteriile pentru alegerea mastii
     cop_QR = [[0 for _ in range(VQRSize[vs])] for _ in range(VQRSize[vs])]
     for i in range(VQRSize[vs]):
         for j in range(VQRSize[vs]):
@@ -873,7 +869,7 @@ def scrierecodQR():
             pct_prop = 90
 
         total_puncte = puncte_secvente + nr_boxuri + finding_pat +pct_prop
-
+        #am aflat punctele per masca, o alegem daca e buna in momentul actual
         if min_puncte > total_puncte:
             min_puncte = total_puncte
             masca_potrivita = m
@@ -917,7 +913,7 @@ def citirecodQR():
     else:
         print("Codul QR este de tipul unei variante > 6!")
         ok = False
-
+    #verificam ce masca este, in functie de cei 3 biti de decizie
     if ok != False:
         pixeli_decidere_masca = [qr1[8][2], qr1[8][3], qr1[8][4]]
         if pixeli_decidere_masca[0] == 1 and pixeli_decidere_masca[1] == 1 and pixeli_decidere_masca[2] == 1:
@@ -937,7 +933,7 @@ def citirecodQR():
         elif pixeli_decidere_masca[0] == 0 and pixeli_decidere_masca[1] == 0 and pixeli_decidere_masca[2] == 0:
             masca_decisa = 7
         aux = len(qr1)
-
+#scoatem masca
         for i in range(6):
             qr1[8][i] = 0
         qr1[8][7] = 0
